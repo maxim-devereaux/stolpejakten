@@ -24,6 +24,7 @@
         "vue-template-compiler": "^2.6.14"
     },
     "dependencies": {
+        "@fortawesome/fontawesome-free": "^5.15.3",
         "@googlemaps/js-api-loader": "^1.12.1",
         "graham-fast": "^1.0.0"
     }

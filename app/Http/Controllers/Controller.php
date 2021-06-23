@@ -18,6 +18,12 @@ class Controller extends BaseController
         return $this->makeRequest('POST', 'https://apiv9.stolpejakten.no/auth', [],  [], $request->all(), $headers, true );
     }
 
+    public function getPerson( Request $request ) {
+        $token = $request->get('token');
+        $headers = [ 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json' ];
+        return $this->makeRequest('GET', 'https://apiv9.stolpejakten.no/users/me', [], [], [], $headers );
+    }
+
     public function getAreas( Request $request ) {
         $headers = [ 'Accept' => 'application/json' ];
         return $this->makeRequest('GET', 'https://apiv9.stolpejakten.no/fylker/app', [], [], [], $headers );

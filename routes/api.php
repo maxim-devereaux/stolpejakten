@@ -14,5 +14,6 @@ use Illuminate\Http\Request;
 */
 
 Route::get('/getToken', ['uses' => 'Controller@getToken']);
+Route::get('/getPerson', ['uses' => 'Controller@getPerson']);
 Route::get('/getAreas', ['uses' => 'Controller@getAreas']);
 Route::get('/getVisits', ['uses' => 'Controller@getVisits']);
