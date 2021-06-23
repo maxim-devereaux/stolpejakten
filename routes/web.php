@@ -1,5 +1,4 @@
 <?php
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -11,6 +10,6 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', function () { return redirect()->route('home'); });
+Route::get('/home', ['as' => 'home', 'uses' => 'Controller@home' ]);
+Route::get('/map', ['as' => 'map', 'uses' => 'Controller@map' ]);
