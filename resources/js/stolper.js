@@ -232,7 +232,7 @@ getKommune = function( jqkomm ) {
         $.ajax({
             dataType: "text", url: "/api/getVisits?kommuner=" + kommid + "&token=" + sjtoken, async: true, success: function (text) {
                 processGetKommune(text, jqkomm );
-            }, failure: function (text) {
+            }, error: function (text) {
             processFailKommune(jqkomm );
         }
         });
@@ -246,7 +246,7 @@ getAreas = function() {
     $.ajax({
         dataType: "text", url: "/api/getAreas", async: true, success: function (text) {
             processGetAreas(text);
-        }, failure: function (text) {
+        }, error: function (text) {
             doLogout();
         }
     });
@@ -256,7 +256,7 @@ getPerson = function() {
     $.ajax({
         dataType: "text", url: "/api/getPerson?token=" + sjtoken, async: true, success: function (text) {
             processGetPerson(text);
-        }, failure: function (text) {
+        }, error: function (text) {
             doLogout();
         }
     });
