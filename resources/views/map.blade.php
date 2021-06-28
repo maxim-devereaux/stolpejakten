@@ -32,4 +32,5 @@
     </div>
 </div>
 
+<div id="gmap_key" class="invisible">{{ Config::get('map.api_key') }}</div>
 @endsection

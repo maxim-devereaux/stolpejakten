@@ -13,3 +13,4 @@
 Route::get('/', function () { return redirect()->route('home'); });
 Route::get('/home', ['as' => 'home', 'uses' => 'Controller@home' ]);
 Route::get('/map', ['as' => 'map', 'uses' => 'Controller@map' ]);
+Route::post('/flash', ['uses' => 'Controller@flashInfo']);

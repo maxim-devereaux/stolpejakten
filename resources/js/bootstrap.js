@@ -36,8 +36,10 @@ if (token) {
     window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
 
     $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': token.content
+        beforeSend: function(xhr, type) {
+            if (!type.crossDomain) {
+                xhr.setRequestHeader('X-CSRF-Token', token.content);
+            }
         }
     });
 } else {

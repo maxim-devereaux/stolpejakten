@@ -3,12 +3,6 @@ var gmap;
 var sjtoken;
 var fylkeareas = {};
 
-const loader = new GoogleMaps.Loader({
-    apiKey: "AIzaSyDJtzIuguDyk__zpqYwytdDs5DwxYh9WwE",
-    version: "weekly",
-    libraries: []
-});
-
 const mapOptions = {
     // Center on Holmlia, Oslo
     center: {
@@ -43,9 +37,34 @@ function dynamicSort(property) {
     }
 }
 
-doLogout = function() {
+processDoLogout = function() {
+    window.location.href = '/home'
+};
+
+doLogout = function(text, level) {
     sessionStorage.clear();
-    window.location.href = '/home';
+
+    if (text !== null) {
+        let fd = new FormData();
+        fd.append('level', level );
+        fd.append('message', text);
+        $.ajax({
+            data: fd,
+            type: 'POST',
+            contentType: false,
+            processData: false,
+            dataType: "text",
+            url: "/flash",
+            async: true,
+            success: function (text) {
+                processDoLogout()
+            },
+            error: function (text) {
+                processDoLogout()
+            }
+        });
+    }
+    else { processDoLogout() }
 };
 
 processGetAreas = function(jsontext) {
@@ -56,46 +75,43 @@ processGetAreas = function(jsontext) {
         jsondata.results.sort(dynamicSort("name"));
         let cnt = Object.keys( jsondata.results ).length;
         if( cnt>0 ) {
-            markup = '<table><tbody>';
             for( let i=0; i<cnt; i++ ) {
-                markup += '<tr><td colspan="2" class="fylke" data-id="' + jsondata.results[i].id + '" data-total="0" data-visited="0" data-name="' +
-                    jsondata.results[i].name + '">' + jsondata.results[i].name + '</td></tr>';
+                markup += '<div class="row"><div class="col fylke" data-id="' + jsondata.results[i].id + '" data-total="0" data-visited="0" data-name="' +
+                    jsondata.results[i].name + '">' + jsondata.results[i].name + '</div></div>';
                 let cnt2 = Object.keys( jsondata.results[i].kommuner ).length;
                 if( cnt2>0 ) {
                     jsondata.results[i].kommuner.sort(dynamicSort("name"));
                     for( let j=0; j<cnt2; j++ ) {
-                        markup += '<tr><td></td><td colspan="2" class="kommune" data-fetched="0" data-id="' + jsondata.results[i].kommuner[j].id +
+                        markup += '<div class="row"><div class="offset-1 col-11 kommune" data-fetched="0" data-id="' + jsondata.results[i].kommuner[j].id +
                             '" data-fylkeid="' + jsondata.results[i].id + '" data-total="0" data-visited="0" data-name="' +
-                            jsondata.results[i].kommuner[j].name + '">' + jsondata.results[i].kommuner[j].name + '</td></tr>';
+                            jsondata.results[i].kommuner[j].name + '">' + jsondata.results[i].kommuner[j].name + '</div></div>';
                     }
                 }
             }
-            markup += '</tbody></table>';
         }
         $('#sjinfo').empty().append(markup);
-        $('td.kommune').off().on('click', function() { getKommune( $(this)) });
-        $('td.fylke').off().on('click', function() { getFylke( $(this)) });
+        $('div.kommune').off().on('click', function() { getKommune( $(this)) });
+        $('div.fylke').off().on('click', function() { getFylke( $(this)) });
     }
     else {
-        doLogout();
+        doLogout('Klarte ikke å hente data (mulig utløpt sesjon). Du ble logget ut.', 'error');
     }
 };
 
 processGetPerson = function(jsontext) {
-    let markup = '';
     var jsondata = JSON.parse(jsontext);
     if (jsondata.STATUS === 200 ) {
         jsondata = JSON.parse(jsondata.CONTENT);
         $('#sjuser').empty().append( jsondata.name );
     }
     else {
-        doLogout();
+        doLogout('Klarte ikke å hente data (mulig utløpt sesjon). Du ble logget ut.', 'error');
     }
 };
 
 getFylke = function( jqfylke ) {
     let fylkeid = jqfylke.data('id');
-    let jqkomm = $('td.kommune').filter(function() { return ( $(this).data('fylkeid') === fylkeid ) });
+    let jqkomm = $('div.kommune').filter(function() { return ( $(this).data('fylkeid') === fylkeid ) });
     if( jqkomm && jqkomm.length > 0 ) {
         let jqkommp = jqkomm.filter(function () {
             return (parseInt( $(this).data('fetched')) === 1 )
@@ -106,7 +122,7 @@ getFylke = function( jqfylke ) {
         let jqkommd = jqkomm.filter(function () {
             return (parseInt( $(this).data('fetched')) === 2 )
         });
-        // If no in progress kommuner
+        // If no in-progress kommuner
         if( jqkommp === null || jqkommp.length === 0 ) {
             if( jqkomma && jqkomma.length > 0 ) {
                 jqkomma.each( function( index, element ) {
@@ -123,9 +139,9 @@ getFylke = function( jqfylke ) {
 };
 
 setFylke = function( fylkeid ) {
-    let jqobj = $('td.fylke').filter(function() { return ( $(this).data('id') === fylkeid ) });
+    let jqobj = $('div.fylke').filter(function() { return ( $(this).data('id') === fylkeid ) });
     if( jqobj && jqobj.length > 0 ) {
-        let jqkomm = $('td.kommune').filter(function() { return ( $(this).data('fylkeid') === fylkeid ) });
+        let jqkomm = $('div.kommune').filter(function() { return ( $(this).data('fylkeid') === fylkeid ) });
         let tot = 0, vst = 0, fetches = [ 0, 0, 0 ], fval, fnts = '', fnte = '';
         if( jqkomm && jqkomm.length > 0 ) {
             jqkomm.each( function( index, element ) {
@@ -159,7 +175,7 @@ setFylke = function( fylkeid ) {
 processDeleteKommune = function( jqobj ) {
     let kommid = jqobj.data( 'id' );
     for( let i=0; i<fylkeareas[kommid].length; i++) {
-        fylkeareas[kommid][i].setMap( null );
+        fylkeareas[kommid][i].marker.setMap( null );
         fylkeareas[kommid][i] = null;
     }
     delete fylkeareas[kommid];
@@ -167,6 +183,9 @@ processDeleteKommune = function( jqobj ) {
     jqobj.data('fetched', '0');
     jqobj.data('total', '0');
     jqobj.data('visited', '0');
+    var jqarea = $('div.kart').filter(function() { return ( $(this).data('kommuneid') === kommid )});
+    jqarea.each( function( index, element ) {
+        $(this).parent().remove(); });
     setFylke( jqobj.data('fylkeid'));
 };
 
@@ -180,11 +199,21 @@ processFailKommune = function( jqobj ) {
 processGetKommune = function( jsontext, jqobj ) {
     let kommid = jqobj.data( 'id' );
     fylkeareas[kommid] = [];
+    let markup = '';
     var img, jsondata = JSON.parse(jsontext);
     if (jsondata.STATUS === 200 ) {
         jsondata = jsondata.CONTENT;
         let cnt = Object.keys( jsondata.poles ).length;
         let vcnt = Object.keys( jsondata.visits ).length;
+        let maps = Object.keys( jsondata.areas ).length;
+        if( maps>0 ) {
+            jsondata.areas.sort(dynamicSort("name"));
+            for( let j=0; j<maps; j++ ) {
+                markup += '<div class="row"><div class="offset-2 col-10 kart" data-kommuneid="' + jsondata.areas[j].kommune + '" data-total="0" data-visited="0" data-name="' +
+                    jsondata.areas[j].name + '" data-visible="1">' + jsondata.areas[j].name + '</div></div>';
+            }
+            $(markup).insertAfter(jqobj.parent());
+        }
         if( cnt>0 ) {
             for( let i=0; i<cnt; i++ ) {
                 if( jsondata.poles[i].visited ) {
@@ -197,17 +226,29 @@ processGetKommune = function( jsontext, jqobj ) {
                     position: { lat: jsondata.poles[i].location[1], lng: jsondata.poles[i].location[0] }, icon: img,
                     title: jsondata.poles[i].area_name + ': ' + jsondata.poles[i].name });
                 newMarker.setMap( gmap );
-                fylkeareas[kommid].push( newMarker );
+                fylkeareas[kommid].push( { marker: newMarker, area: jsondata.poles[i].area_name } );
+                var jqarea = $('div.kart').filter(function() { return ( $(this).data('kommuneid') === kommid && $(this).data('name') === jsondata.poles[i].area_name ) });
+                if( jqarea && jqarea.length > 0 ) {
+                    jqarea.data('total', parseInt( jqarea.data('total')) + 1 );
+                    if( jsondata.poles[i].visited ) {
+                        jqarea.data('visited', parseInt( jqarea.data('visited')) + 1 );
+                    }
+                }
+                var jqarea = $('div.kart').filter(function() { return ( $(this).data('kommuneid') === kommid )});
+                jqarea.each( function( index, element ) {
+                    $(this).html( '<b>' + $(this).data('name') + ' (' + $(this).data('visited') + '/' + $(this).data('total') + ')</b>' );
+                });
             }
         }
         jqobj.data('fetched', '2');
         jqobj.data('total', cnt.toString());
         jqobj.data('visited', vcnt.toString());
         jqobj.html( '<b>' + jqobj.data('name') + ' (' + jqobj.data('visited') + '/' + jqobj.data('total') + ')</b>' );
+        $('div.kart').off().on('click', function() { toggleKart( $(this)) });
         setFylke( jqobj.data('fylkeid'));
     }
     else {
-        doLogout();
+        doLogout('Klarte ikke å hente data (mulig utløpt sesjon). Du ble logget ut.', 'error');
     }
 };
 
@@ -219,7 +260,31 @@ processLogin = function( jsontext ) {
         window.location.href = '/map';
     }
     else {
-        doLogout();
+        doLogout('Klarte ikke å logge inn. Sjekk brukernavn/passord.', 'error');
+    }
+};
+
+toggleKart = function( jqkart ) {
+    let kartvis = parseInt( jqkart.data( 'visible' ));
+    let kommid = jqkart.data( 'kommuneid' );
+    let kname = jqkart.data( 'name' );
+    if( kartvis === 1 ) {
+        for( let i=0; i<fylkeareas[kommid].length; i++) {
+            if( fylkeareas[kommid][i].area === kname ) {
+                fylkeareas[kommid][i].marker.setMap( null );
+            }
+        }
+        jqkart.data( 'visible', '0' );
+        jqkart.html( jqkart.data('name') + ' (' + jqkart.data('visited') + '/' + jqkart.data('total') + ')' );
+    }
+    else {
+        for( let i=0; i<fylkeareas[kommid].length; i++) {
+            if( fylkeareas[kommid][i].area === kname ) {
+                fylkeareas[kommid][i].marker.setMap( gmap );
+            }
+        }
+        jqkart.data( 'visible', '1' );
+        jqkart.html( '<b>' + jqkart.data('name') + ' (' + jqkart.data('visited') + '/' + jqkart.data('total') + ')</b>' );
     }
 };
 
@@ -247,7 +312,7 @@ getAreas = function() {
         dataType: "text", url: "/api/getAreas", async: true, success: function (text) {
             processGetAreas(text);
         }, error: function (text) {
-            doLogout();
+            doLogout('Klarte ikke å hente data (mulig utløpt sesjon). Du ble logget ut.', 'error');
         }
     });
 };
@@ -257,7 +322,7 @@ getPerson = function() {
         dataType: "text", url: "/api/getPerson?token=" + sjtoken, async: true, success: function (text) {
             processGetPerson(text);
         }, error: function (text) {
-            doLogout();
+            doLogout('Klarte ikke å hente data (mulig utløpt sesjon). Du ble logget ut.', 'error');
         }
     });
 };
@@ -268,30 +333,39 @@ doLogin = function() {
     $.ajax({
         dataType: "text", url: "/api/getToken?username=" + sjusr + "&password=" + sjpwd + "&version=2", async: true, success: function (text) {
             processLogin(text);
+        }, error: function (text) {
+        doLogout('Klarte ikke å logge inn. Sjekk brukernavn/passord.', 'error');
         }
     });
 };
 
-// Callback
-loader.loadCallback((e) => {
-    if (e) {
-        console.log(e);
-    } else {
-        let sjmap = document.getElementById("sjmap");
-        if( sjmap )
-        {
-            gmap = new google.maps.Map(document.getElementById("sjmap"), mapOptions);
-            sjtoken = window.sessionStorage.getItem('sjtoken');
-            if( !sjtoken ) {
-                window.location.href = '/home';
-            }
-            getPerson();
-            getAreas();
-        }
-    }
-});
-
 $(document).ready(function(){
     $('#btn_login').on('click', function() { doLogin() });
-    $('#btn_logout').on('click', function() { doLogout() });
+    $('#btn_logout').on('click', function() { doLogout('Logget ut.', 'success') });
+
+    let sjmap = document.getElementById("sjmap");
+    if( sjmap ) {
+        let gkey = $('#gmap_key').text();
+        const loader = new GoogleMaps.Loader({
+            apiKey: gkey, version: "weekly", libraries: [] });
+
+        // Callback
+        loader.loadCallback((e) => {
+            if (e) {
+                console.log(e);
+                doLogout('Klarte ikke å laste Google-kart. Du ble logget ut.', 'error');
+            } else {
+                let sjmap = document.getElementById("sjmap");
+                if (sjmap) {
+                    sjtoken = window.sessionStorage.getItem('sjtoken');
+                    if (!sjtoken) {
+                        window.location.href = '/home';
+                    }
+                    gmap = new google.maps.Map(sjmap, mapOptions);
+                    getPerson();
+                    getAreas();
+                }
+            }
+        });
+    }
 });

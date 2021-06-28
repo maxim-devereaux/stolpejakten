@@ -53,6 +53,12 @@ class Controller extends BaseController
         return $result;
     }
 
+    public function flashInfo( Request $request ) {
+
+        $request->session()->flash( 'flash_' . $request->input('level'), $request->input('message'));
+        return '{}';
+    }
+
     public function home( Request $request ) {
         return view( 'home');
     }
