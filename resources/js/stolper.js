@@ -439,18 +439,36 @@ toggleKart = function( jqkart ) {
     let kommid = jqkart.data( 'kommuneid' );
     let kname = jqkart.data( 'name' );
     if( kartvis === 1 ) {
-        for( let i=0; i<fylkeareas[kommid].length; i++) {
-            if( fylkeareas[kommid][i].area === kname ) {
-                fylkeareas[kommid][i].marker.setMap( null );
+        if( fylkeareas[kommid].length > 0 ) {
+            for( let i=0; i<fylkeareas[kommid].length; i++) {
+                if( fylkeareas[kommid][i].area === kname ) {
+                    fylkeareas[kommid][i].marker.setMap( null );
+                }
+            }
+        }
+        if( fylkepolys[kommid].length > 0 ) {
+            for (let j = 0; j < fylkepolys[kommid].length; j++) {
+                if (fylkepolys[kommid][j].area === kname) {
+                    fylkepolys[kommid][j].marker.setMap( null );
+                }
             }
         }
         jqkart.data( 'visible', '0' );
         jqkart.html( jqkart.data('name') + ' (' + jqkart.data('visited') + '/' + jqkart.data('total') + ')' );
     }
     else {
-        for( let i=0; i<fylkeareas[kommid].length; i++) {
-            if( fylkeareas[kommid][i].area === kname ) {
-                fylkeareas[kommid][i].marker.setMap( gmap );
+        if( fylkeareas[kommid].length > 0 ) {
+            for( let i=0; i<fylkeareas[kommid].length; i++) {
+                if( fylkeareas[kommid][i].area === kname ) {
+                    fylkeareas[kommid][i].marker.setMap( gmap );
+                }
+            }
+        }
+        if( fylkepolys[kommid].length > 0 ) {
+            for (let j = 0; j < fylkepolys[kommid].length; j++) {
+                if (fylkepolys[kommid][j].area === kname) {
+                    fylkepolys[kommid][j].marker.setMap( gmap );
+                }
             }
         }
         jqkart.data( 'visible', '1' );
