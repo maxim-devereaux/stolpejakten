@@ -78,7 +78,7 @@ togglePins = function() {
         jqkomm.each( function( index, element ) {
             kommid = $(this).data( 'id' );
             if( pins ) {
-                processGetKommune( rawkommuner[ $(this).data( 'id' ) ], $(this), true, false, false );
+                processGetKommune( rawkommuner[ kommid ], $(this), true, false, false );
             }
             else {
                 if( fylkeareas[kommid] ) {
@@ -101,7 +101,7 @@ toggleOutlines = function() {
         jqkomm.each( function( index, element ) {
             kommid = $(this).data( 'id' );
             if( poly ) {
-                processGetKommune( rawkommuner[ $(this).data( 'id' ) ], $(this), false, true, false );
+                processGetKommune( rawkommuner[ kommid ], $(this), false, true, false );
             }
             else {
                 if( fylkepolys[kommid] ) {

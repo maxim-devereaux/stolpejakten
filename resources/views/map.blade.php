@@ -35,7 +35,7 @@
                 <div class="row flex-shrink-0 pb-3">
                     <div class="col offset-3">
                         <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="mapOutline">
+                            <input type="checkbox" class="form-check-input" id="mapOutline" checked="checked">
                             <label class="form-check-label" for="mapOutline">Vis områdegrense</label>
                         </div>
                     </div>
