@@ -400,7 +400,7 @@ showInfoWindow = function( event, poly, kommid, area_name ) {
         }
     }
     if( bfound ) {
-        let contentString = '<span class="h5">' + jqarea.data('name') +'</span><br>' + '<span class="h6">' + area_name + ' (' +
+        let contentString = '<span class="h5">' + jqarea.first().data('name') +'</span><br>' + '<span class="h6">' + area_name + ' (' +
             fylkepolys[kommid][i].totVisited.toString() + '/' + fylkepolys[kommid][i].tot.toString() + ')</span><br><br>';
         if( fylkepolys[kommid][i].green > 0 ) {
             contentString += '<span><i class="fa fa-circle" style="color: green;"></i></span> <b>' + fylkepolys[kommid][i].greenVisited.toString() + '/' + fylkepolys[kommid][i].green.toString() + '</b><br>'
