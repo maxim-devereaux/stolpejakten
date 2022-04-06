@@ -1,7 +1,10 @@
 
 var gmap;
+var ginfowin;
 var sjtoken;
-var fylkeareas = {};
+var fylkeareas = [];
+var fylkepolys = [];
+var rawkommuner = [];
 
 const mapOptions = {
     // Center on Holmlia, Oslo
@@ -67,6 +70,52 @@ doLogout = function(text, level) {
     else { processDoLogout() }
 };
 
+togglePins = function() {
+    let kommid;
+    let pins = !!( $('#pinPositions').prop('checked'));
+    let jqkomm = $('div.kommune').filter(function() { return (parseInt( $(this).data('fetched')) === 2 ) });
+    if( jqkomm && jqkomm.length > 0 ) {
+        jqkomm.each( function( index, element ) {
+            kommid = $(this).data( 'id' );
+            if( pins ) {
+                processGetKommune( rawkommuner[ $(this).data( 'id' ) ], $(this), true, false, false );
+            }
+            else {
+                if( fylkeareas[kommid] ) {
+                    for (let i = 0; i < fylkeareas[kommid].length; i++) {
+                        fylkeareas[kommid][i].marker.setMap(null);
+                        fylkeareas[kommid][i] = null;
+                    }
+                    delete fylkeareas[kommid];
+                }
+            }
+        });
+    }
+};
+
+toggleOutlines = function() {
+    let kommid;
+    let poly = !!( $('#mapOutline').prop('checked'));
+    let jqkomm = $('div.kommune').filter(function() { return (parseInt( $(this).data('fetched')) === 2 ) });
+    if( jqkomm && jqkomm.length > 0 ) {
+        jqkomm.each( function( index, element ) {
+            kommid = $(this).data( 'id' );
+            if( poly ) {
+                processGetKommune( rawkommuner[ $(this).data( 'id' ) ], $(this), false, true, false );
+            }
+            else {
+                if( fylkepolys[kommid] ) {
+                    for( let i=0; i<fylkepolys[kommid].length; i++) {
+                        fylkepolys[kommid][i].marker.setMap( null );
+                        fylkepolys[kommid][i] = null;
+                    }
+                    delete fylkepolys[kommid];
+                }
+            }
+        });
+    }
+};
+
 processGetAreas = function(jsontext) {
     let markup = '';
     var jsondata = JSON.parse(jsontext);
@@ -82,7 +131,7 @@ processGetAreas = function(jsontext) {
                 if( cnt2>0 ) {
                     jsondata.results[i].kommuner.sort(dynamicSort("name"));
                     for( let j=0; j<cnt2; j++ ) {
-                        markup += '<div class="row"><div class="offset-1 col-11 kommune" data-fetched="0" data-id="' + jsondata.results[i].kommuner[j].id +
+                        markup += '<div class="row collapse"><div class="offset-1 col-11 kommune" data-fetched="0" data-id="' + jsondata.results[i].kommuner[j].id +
                             '" data-fylkeid="' + jsondata.results[i].id + '" data-total="0" data-visited="0" data-name="' +
                             jsondata.results[i].kommuner[j].name + '">' + jsondata.results[i].kommuner[j].name + '</div></div>';
                     }
@@ -113,6 +162,7 @@ getFylke = function( jqfylke ) {
     let fylkeid = jqfylke.data('id');
     let jqkomm = $('div.kommune').filter(function() { return ( $(this).data('fylkeid') === fylkeid ) });
     if( jqkomm && jqkomm.length > 0 ) {
+        jqkomm.addClass('show');
         let jqkommp = jqkomm.filter(function () {
             return (parseInt( $(this).data('fetched')) === 1 )
         });
@@ -174,11 +224,20 @@ setFylke = function( fylkeid ) {
 
 processDeleteKommune = function( jqobj ) {
     let kommid = jqobj.data( 'id' );
-    for( let i=0; i<fylkeareas[kommid].length; i++) {
-        fylkeareas[kommid][i].marker.setMap( null );
-        fylkeareas[kommid][i] = null;
+    if( fylkeareas[kommid] ) {
+        for( let i=0; i<fylkeareas[kommid].length; i++) {
+            fylkeareas[kommid][i].marker.setMap( null );
+            fylkeareas[kommid][i] = null;
+        }
+        delete fylkeareas[kommid];
     }
-    delete fylkeareas[kommid];
+    if( fylkepolys[kommid] ) {
+        for( let j=0; j<fylkepolys[kommid].length; j++) {
+            fylkepolys[kommid][j].marker.setMap( null );
+            fylkepolys[kommid][j] = null;
+        }
+        delete fylkepolys[kommid];
+    }
     jqobj.html( jqobj.data('name'));
     jqobj.data('fetched', '0');
     jqobj.data('total', '0');
@@ -196,9 +255,20 @@ processFailKommune = function( jqobj ) {
     jqobj.data('visited', '0');
 };
 
-processGetKommune = function( jsontext, jqobj ) {
+processGetKommune = function( jsontext, jqobj, doPins, doOutlines, doStats ) {
+    let poly = !!( $('#mapOutline').prop('checked'));
+    let pins = !!( $('#pinPositions').prop('checked'));
+    let polyareas = [];
+    let polyidx = [];
+    let polyinfo = [];
+    let polyout, polycol;
+    let areaidx;
     let kommid = jqobj.data( 'id' );
+    if( !rawkommuner[kommid] ) {
+        rawkommuner[kommid] = jsontext;
+    }
     fylkeareas[kommid] = [];
+    fylkepolys[kommid] = [];
     let markup = '';
     var img, jsondata = JSON.parse(jsontext);
     if (jsondata.STATUS === 200 ) {
@@ -206,7 +276,7 @@ processGetKommune = function( jsontext, jqobj ) {
         let cnt = Object.keys( jsondata.poles ).length;
         let vcnt = Object.keys( jsondata.visits ).length;
         let maps = Object.keys( jsondata.areas ).length;
-        if( maps>0 ) {
+        if( maps>0 && doStats ) {
             jsondata.areas.sort(dynamicSort("name"));
             for( let j=0; j<maps; j++ ) {
                 markup += '<div class="row"><div class="offset-2 col-10 kart" data-kommuneid="' + jsondata.areas[j].kommune + '" data-total="0" data-visited="0" data-name="' +
@@ -222,33 +292,133 @@ processGetKommune = function( jsontext, jqobj ) {
                 else {
                     img = postColours[ jsondata.poles[i].difficulty ];
                 }
-                var newMarker = new google.maps.Marker({
-                    position: { lat: jsondata.poles[i].location[1], lng: jsondata.poles[i].location[0] }, icon: img,
-                    title: jsondata.poles[i].area_name + ': ' + jsondata.poles[i].name });
-                newMarker.setMap( gmap );
-                fylkeareas[kommid].push( { marker: newMarker, area: jsondata.poles[i].area_name } );
-                var jqarea = $('div.kart').filter(function() { return ( $(this).data('kommuneid') === kommid && $(this).data('name') === jsondata.poles[i].area_name ) });
-                if( jqarea && jqarea.length > 0 ) {
-                    jqarea.data('total', parseInt( jqarea.data('total')) + 1 );
-                    if( jsondata.poles[i].visited ) {
-                        jqarea.data('visited', parseInt( jqarea.data('visited')) + 1 );
+
+                if( poly && doOutlines ) {
+                    areaidx = polyidx.indexOf( jsondata.poles[i].area_name );
+                    if( areaidx === -1 ) {
+                        areaidx = polyidx.length;
+                        polyareas[areaidx] = [];
+                        polyidx.push( jsondata.poles[i].area_name );
+                        polyinfo.push({ tot: 0, totVisited: 0, black: 0, blackVisited: 0, red: 0, redVisited: 0, blue: 0, blueVisited: 0, green: 0, greenVisited: 0 });
                     }
+                    polyareas[areaidx].push({ lat: jsondata.poles[i].location[1], lng: jsondata.poles[i].location[0] });
+                    polyinfo[areaidx].tot += 1;
+                    polyinfo[areaidx].totVisited += ( jsondata.poles[i].visited ? 1 : 0 );
+                    polyinfo[areaidx].black += ( jsondata.poles[i].difficulty === 4 ? 1 : 0 );
+                    polyinfo[areaidx].blackVisited += (( jsondata.poles[i].difficulty === 4 && jsondata.poles[i].visited ) ? 1 : 0 );
+                    polyinfo[areaidx].red += ( jsondata.poles[i].difficulty === 3 ? 1 : 0 );
+                    polyinfo[areaidx].redVisited += (( jsondata.poles[i].difficulty === 3 && jsondata.poles[i].visited ) ? 1 : 0 );
+                    polyinfo[areaidx].blue += ( jsondata.poles[i].difficulty === 2 ? 1 : 0 );
+                    polyinfo[areaidx].blueVisited += (( jsondata.poles[i].difficulty === 2 && jsondata.poles[i].visited ) ? 1 : 0 );
+                    polyinfo[areaidx].green += ( jsondata.poles[i].difficulty === 1 ? 1 : 0 );
+                    polyinfo[areaidx].greenVisited += (( jsondata.poles[i].difficulty === 1 && jsondata.poles[i].visited ) ? 1 : 0 );
                 }
-                var jqarea = $('div.kart').filter(function() { return ( $(this).data('kommuneid') === kommid )});
-                jqarea.each( function( index, element ) {
-                    $(this).html( '<b>' + $(this).data('name') + ' (' + $(this).data('visited') + '/' + $(this).data('total') + ')</b>' );
-                });
+
+                if( pins && doPins ) {
+                    // Show pin
+                    var newMarker = new google.maps.Marker({
+                        position: { lat: jsondata.poles[i].location[1], lng: jsondata.poles[i].location[0] }, icon: img,
+                        title: jsondata.poles[i].area_name + ': ' + jsondata.poles[i].name });
+                    newMarker.setMap( gmap );
+                    fylkeareas[kommid].push( { marker: newMarker, area: jsondata.poles[i].area_name } );
+                }
+
+                if( doStats ) {
+                    // Count total/visited for this map
+                    var jqarea = $('div.kart').filter(function() { return ( $(this).data('kommuneid') === kommid && $(this).data('name') === jsondata.poles[i].area_name ) });
+                    if( jqarea && jqarea.length > 0 ) {
+                        jqarea.data('total', parseInt( jqarea.data('total')) + 1 );
+                        if( jsondata.poles[i].visited ) {
+                            jqarea.data('visited', parseInt( jqarea.data('visited')) + 1 );
+                        }
+                    }
+
+                    // Count total/visited for this area
+                    var jqarea = $('div.kart').filter(function() { return ( $(this).data('kommuneid') === kommid )});
+                    jqarea.each( function( index, element ) {
+                        $(this).html( '<b>' + $(this).data('name') + ' (' + $(this).data('visited') + '/' + $(this).data('total') + ')</b>' );
+                    });
+                }
+            }
+
+            // Add boundary polygon
+            if( poly && doOutlines ) {
+                for(let j=0; j<polyidx.length; j++) {
+                    if( polyinfo[j].tot === 0 || polyinfo[j].totVisited === 0 ) {
+                        polycol = '#404040'
+                    }
+                    else if ( polyinfo[j].totVisited / polyinfo[j].tot < 0.333 ) {
+                        polycol = '#D00000'
+                    }
+                    else if ( polyinfo[j].totVisited / polyinfo[j].tot < 0.667 ) {
+                        polycol = '#D08000'
+                    }
+                    else if ( polyinfo[j].totVisited < polyinfo[j].tot ) {
+                        polycol = '#D0D000'
+                    }
+                    else {
+                        polycol = '#008000'
+                    }
+                    polyout = hull( polyareas[j], 10, ['.lng', '.lat'] );
+                    var newPoly = new google.maps.Polygon({
+                        paths: polyout,
+                        strokeColor: polycol,
+                        strokeOpacity: 0.9,
+                        strokeWeight: 2,
+                        fillColor: polycol,
+                        fillOpacity: 0.6,
+                    });
+                    newPoly.setMap( gmap );
+                    newPoly.addListener('click', function (evt) { showInfoWindow(evt, this, kommid, polyidx[j] ); });
+                    fylkepolys[kommid].push( { marker: newPoly, area: polyidx[j], tot: polyinfo[j].tot, totVisited: polyinfo[j].totVisited, black: polyinfo[j].black,
+                                               blackVisited: polyinfo[j].blackVisited, red: polyinfo[j].red, redVisited: polyinfo[j].redVisited, blue: polyinfo[j].blue,
+                                               blueVisited: polyinfo[j].blueVisited, green: polyinfo[j].green, greenVisited: polyinfo[j].greenVisited} );
+                }
             }
         }
-        jqobj.data('fetched', '2');
-        jqobj.data('total', cnt.toString());
-        jqobj.data('visited', vcnt.toString());
-        jqobj.html( '<b>' + jqobj.data('name') + ' (' + jqobj.data('visited') + '/' + jqobj.data('total') + ')</b>' );
-        $('div.kart').off().on('click', function() { toggleKart( $(this)) });
-        setFylke( jqobj.data('fylkeid'));
+        if( doStats ) {
+            jqobj.data('fetched', '2');
+            jqobj.data('total', cnt.toString());
+            jqobj.data('visited', vcnt.toString());
+            jqobj.html( '<b>' + jqobj.data('name') + ' (' + jqobj.data('visited') + '/' + jqobj.data('total') + ')</b>' );
+            $('div.kart').off().on('click', function() { toggleKart( $(this)) });
+            setFylke( jqobj.data('fylkeid'))
+        }
     }
     else {
         doLogout('Klarte ikke å hente data (mulig utløpt sesjon). Du ble logget ut.', 'error');
+    }
+};
+
+showInfoWindow = function( event, poly, kommid, area_name ) {
+    var jqarea = $('div.kommune').filter(function() { return ( $(this).data('id') === kommid )});
+    let i, bfound = false;
+    for(i=0; i<fylkepolys[kommid].length; i++) {
+        if( fylkepolys[kommid][i].area === area_name ) {
+            bfound = true;
+            break;
+        }
+    }
+    if( bfound ) {
+        let contentString = '<span class="h5">' + jqarea.data('name') +'</span><br>' + '<span class="h6">' + area_name + ' (' +
+            fylkepolys[kommid][i].totVisited.toString() + '/' + fylkepolys[kommid][i].tot.toString() + ')</span><br><br>';
+        if( fylkepolys[kommid][i].green > 0 ) {
+            contentString += '<span><i class="fa fa-circle" style="color: green;"></i></span> <b>' + fylkepolys[kommid][i].greenVisited.toString() + '/' + fylkepolys[kommid][i].green.toString() + '</b><br>'
+        }
+        if( fylkepolys[kommid][i].blue > 0 ) {
+            contentString += '<span><i class="fa fa-circle" style="color: blue;"></i></span> <b>' + fylkepolys[kommid][i].blueVisited.toString() + '/' + fylkepolys[kommid][i].blue.toString() + '</b><br>'
+        }
+        if( fylkepolys[kommid][i].red > 0 ) {
+            contentString += '<span><i class="fa fa-circle" style="color: red;"></i></span> <b>' + fylkepolys[kommid][i].redVisited.toString() + '/' + fylkepolys[kommid][i].red.toString() + '</b><br>'
+        }
+        if( fylkepolys[kommid][i].black > 0 ) {
+            contentString += '<span><i class="fa fa-circle" style="color: black;"></i></span> <b>' + fylkepolys[kommid][i].blackVisited.toString() + '/' + fylkepolys[kommid][i].black.toString() + '</b><br>'
+        }
+
+        // Replace the info window's content and position.
+        ginfowin.setContent(contentString);
+        ginfowin.setPosition(event.latLng);
+        ginfowin.open( gmap );
     }
 };
 
@@ -296,7 +466,7 @@ getKommune = function( jqkomm ) {
         jqkomm.html( jqkomm.data('name') + '&nbsp;<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Laster...</span></div>' );
         $.ajax({
             dataType: "text", url: "/api/getVisits?kommuner=" + kommid + "&token=" + sjtoken, async: true, success: function (text) {
-                processGetKommune(text, jqkomm );
+                processGetKommune(text, jqkomm, true, true, true );
             }, error: function (text) {
             processFailKommune(jqkomm );
         }
@@ -342,6 +512,8 @@ doLogin = function() {
 $(document).ready(function(){
     $('#btn_login').on('click', function() { doLogin() });
     $('#btn_logout').on('click', function() { doLogout('Logget ut.', 'success') });
+    $('#pinPositions').on('change', function() { togglePins() });
+    $('#mapOutline').on('change', function() { toggleOutlines() });
 
     let sjmap = document.getElementById("sjmap");
     if( sjmap ) {
@@ -362,6 +534,7 @@ $(document).ready(function(){
                         window.location.href = '/home';
                     }
                     gmap = new google.maps.Map(sjmap, mapOptions);
+                    ginfowin = new google.maps.InfoWindow();
                     getPerson();
                     getAreas();
                 }

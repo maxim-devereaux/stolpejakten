@@ -33,5 +33,5 @@ require('./bootstrap');
 //});
 
 window.GoogleMaps = require( '@googlemaps/js-api-loader' );
-window.grahamScan = require( 'graham-fast' );
+window.hull = require( 'hull.js' );
 require('./stolper');

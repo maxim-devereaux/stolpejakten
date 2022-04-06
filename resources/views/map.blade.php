@@ -18,10 +18,26 @@
                         <span id="btn_logout" data-toggle="tooltip" title="Logg ut"><i class="fas fa-door-open fa-2x"></i></span>
                     </div>
                 </div>
-                <div class="row flex-shrink-0 p-3">
+                <div class="row flex-shrink-0 pt-3">
                     <div class="col text-center">
                         <h4>Fylker og kommuner/områder</h4>
                         <p>Trykk på et navn for å aktivere/deaktivere</p>
+                    </div>
+                </div>
+                <div class="row flex-shrink-0">
+                    <div class="col offset-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="pinPositions">
+                            <label class="form-check-label" for="pinPositions">Vis markører</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row flex-shrink-0 pb-3">
+                    <div class="col offset-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="mapOutline">
+                            <label class="form-check-label" for="mapOutline">Vis områdegrense</label>
+                        </div>
                     </div>
                 </div>
                 <div class="row flex-fill flex-grow-1 overflow-auto">
