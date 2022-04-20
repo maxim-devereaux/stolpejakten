@@ -129,7 +129,7 @@ toggleOutlines = function() {
 };
 
 processGetAreas = function(jsontext) {
-    let markup = '';
+    let markup = '', fylkeval;
     var jsondata = JSON.parse(jsontext);
     if (jsondata.STATUS === 200 ) {
         jsondata = JSON.parse(jsondata.CONTENT);
@@ -153,6 +153,16 @@ processGetAreas = function(jsontext) {
         $('#sjinfo').empty().append(markup);
         $('div.kommune').off().on('click', function() { getKommune( $(this)) });
         $('div.fylke').off().on('click', function() { getFylke( $(this)) });
+        if( cnt>0 ) {
+            if (typeof( localStorage ) !== 'undefined' ) {
+                for (let k=0; k<cnt; k++) {
+                    fylkeval = localStorage.getItem( 'fylke_' + jsondata.results[k].id.toString() );
+                    if( fylkeval === '1' ) {
+                        getFylke( $('div.fylke').filter(function() { return ( $(this).data('id') === jsondata.results[k].id ) }));
+                    }
+                }
+            }
+        }
     }
     else {
         doLogout('Klarte ikke å hente data (mulig utløpt sesjon). Du ble logget ut.', 'error');
@@ -228,6 +238,11 @@ setFylke = function( fylkeid ) {
                 }
                 else {
                     jqobj.html( fnts + jqobj.data('name') + ' (' + jqobj.data('visited') + '/' + jqobj.data('total') + ')' + fnte );
+                }
+
+                // Store fylke as active if anything is active
+                if (typeof( localStorage ) !== 'undefined' ) {
+                    localStorage.setItem('fylke_' + fylkeid.toString(), (fetches[2] > 0 ? '1' : '0'))
                 }
             }
         }
