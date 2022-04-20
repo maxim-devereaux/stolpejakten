@@ -70,6 +70,38 @@ doLogout = function(text, level) {
     else { processDoLogout() }
 };
 
+deletePins = function( kommid, kname ) {
+    if( fylkeareas[kommid] ) {
+        for (let i=0; i<fylkeareas[kommid].length; i++) {
+            if( kname === null || fylkeareas[kommid][i].area === kname ) {
+                fylkeareas[kommid][i].marker.setMap(null);
+                if( kname === null ) {
+                    fylkeareas[kommid][i] = null
+                }
+            }
+        }
+        if( kname === null ) {
+            delete fylkeareas[kommid]
+        }
+    }
+};
+
+deleteOutlines = function( kommid, kname ) {
+    if( fylkepolys[kommid] ) {
+        for( let i=0; i<fylkepolys[kommid].length; i++) {
+            if( kname === null || fylkepolys[kommid][i].area === kname ) {
+                fylkepolys[kommid][i].marker.setMap( null );
+                if( kname === null ) {
+                    fylkepolys[kommid][i] = null
+                }
+            }
+        }
+        if( kname === null ) {
+            delete fylkepolys[kommid]
+        }
+    }
+};
+
 togglePins = function() {
     let kommid;
     let pins = !!( $('#pinPositions').prop('checked'));
@@ -78,16 +110,10 @@ togglePins = function() {
         jqkomm.each( function( index, element ) {
             kommid = $(this).data( 'id' );
             if( pins ) {
-                processGetKommune( rawkommuner[ kommid ], $(this), true, false, false );
+                processGetKommune( rawkommuner[ kommid ], $(this), true, false, false )
             }
             else {
-                if( fylkeareas[kommid] ) {
-                    for (let i = 0; i < fylkeareas[kommid].length; i++) {
-                        fylkeareas[kommid][i].marker.setMap(null);
-                        fylkeareas[kommid][i] = null;
-                    }
-                    delete fylkeareas[kommid];
-                }
+                deletePins( kommid, null )
             }
         });
     }
@@ -101,16 +127,10 @@ toggleOutlines = function() {
         jqkomm.each( function( index, element ) {
             kommid = $(this).data( 'id' );
             if( poly ) {
-                processGetKommune( rawkommuner[ kommid ], $(this), false, true, false );
+                processGetKommune( rawkommuner[ kommid ], $(this), false, true, false )
             }
             else {
-                if( fylkepolys[kommid] ) {
-                    for( let i=0; i<fylkepolys[kommid].length; i++) {
-                        fylkepolys[kommid][i].marker.setMap( null );
-                        fylkepolys[kommid][i] = null;
-                    }
-                    delete fylkepolys[kommid];
-                }
+                deleteOutlines( kommid, null )
             }
         });
     }
@@ -224,20 +244,8 @@ setFylke = function( fylkeid ) {
 
 processDeleteKommune = function( jqobj ) {
     let kommid = jqobj.data( 'id' );
-    if( fylkeareas[kommid] ) {
-        for( let i=0; i<fylkeareas[kommid].length; i++) {
-            fylkeareas[kommid][i].marker.setMap( null );
-            fylkeareas[kommid][i] = null;
-        }
-        delete fylkeareas[kommid];
-    }
-    if( fylkepolys[kommid] ) {
-        for( let j=0; j<fylkepolys[kommid].length; j++) {
-            fylkepolys[kommid][j].marker.setMap( null );
-            fylkepolys[kommid][j] = null;
-        }
-        delete fylkepolys[kommid];
-    }
+    deletePins( kommid, null );
+    deleteOutlines( kommid, null );
     jqobj.html( jqobj.data('name'));
     jqobj.data('fetched', '0');
     jqobj.data('total', '0');
@@ -267,8 +275,12 @@ processGetKommune = function( jsontext, jqobj, doPins, doOutlines, doStats ) {
     if( !rawkommuner[kommid] ) {
         rawkommuner[kommid] = jsontext;
     }
-    fylkeareas[kommid] = [];
-    fylkepolys[kommid] = [];
+    if( pins && doPins ) {
+        fylkeareas[kommid] = [];
+    }
+    if( poly && doOutlines ) {
+        fylkepolys[kommid] = [];
+    }
     let markup = '';
     var img, jsondata = JSON.parse(jsontext);
     if (jsondata.STATUS === 200 ) {
@@ -439,33 +451,21 @@ toggleKart = function( jqkart ) {
     let kommid = jqkart.data( 'kommuneid' );
     let kname = jqkart.data( 'name' );
     if( kartvis === 1 ) {
-        if( fylkeareas[kommid].length > 0 ) {
-            for( let i=0; i<fylkeareas[kommid].length; i++) {
-                if( fylkeareas[kommid][i].area === kname ) {
-                    fylkeareas[kommid][i].marker.setMap( null );
-                }
-            }
-        }
-        if( fylkepolys[kommid].length > 0 ) {
-            for (let j = 0; j < fylkepolys[kommid].length; j++) {
-                if (fylkepolys[kommid][j].area === kname) {
-                    fylkepolys[kommid][j].marker.setMap( null );
-                }
-            }
-        }
+        deletePins( kommid, kname );
+        deleteOutlines( kommid, kname );
         jqkart.data( 'visible', '0' );
         jqkart.html( jqkart.data('name') + ' (' + jqkart.data('visited') + '/' + jqkart.data('total') + ')' );
     }
     else {
-        if( fylkeareas[kommid].length > 0 ) {
+        if( fylkeareas[kommid] ) {
             for( let i=0; i<fylkeareas[kommid].length; i++) {
                 if( fylkeareas[kommid][i].area === kname ) {
                     fylkeareas[kommid][i].marker.setMap( gmap );
                 }
             }
         }
-        if( fylkepolys[kommid].length > 0 ) {
-            for (let j = 0; j < fylkepolys[kommid].length; j++) {
+        if( fylkepolys[kommid] ) {
+            for (let j=0; j<fylkepolys[kommid].length; j++) {
                 if (fylkepolys[kommid][j].area === kname) {
                     fylkepolys[kommid][j].marker.setMap( gmap );
                 }

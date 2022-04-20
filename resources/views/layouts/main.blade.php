@@ -11,7 +11,7 @@
     <link href="{{ mix('css/app.css') }}" rel="stylesheet">
     <script src="{{ mix('js/app.js') }}"></script>
 </head>
-<body>
+<body class="overflow-hidden">
     @yield('content')
 </body>
 </html>
