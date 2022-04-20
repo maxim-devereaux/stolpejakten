@@ -553,7 +553,10 @@ $(document).ready(function(){
                     if (location.protocol === 'https:' && navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(function (p) {
                             var LatLng = new google.maps.LatLng( p.coords.latitude, p.coords.longitude );
-                            mapOptions = { center: LatLng, zoom: 12 };
+                            mapOptions = { center: LatLng, zoom: 14 };
+                            loadMap();
+                        }, function () {
+                            mapOptions = {center: {lat: 59.8, lng: 10.8}, zoom: 12}
                             loadMap();
                         });
                     }
