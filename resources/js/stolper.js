@@ -5,15 +5,7 @@ var sjtoken;
 var fylkeareas = [];
 var fylkepolys = [];
 var rawkommuner = [];
-
-const mapOptions = {
-    // Center on Holmlia, Oslo
-    center: {
-        lat: 59.8,
-        lng: 10.8
-    },
-    zoom: 12
-};
+var mapOptions = {};
 
 const postColours = [
     '',
@@ -527,6 +519,13 @@ doLogin = function() {
     });
 };
 
+loadMap = function() {
+    gmap = new google.maps.Map(sjmap, mapOptions);
+    ginfowin = new google.maps.InfoWindow();
+    getPerson();
+    getAreas();
+}
+
 $(document).ready(function(){
     $('#btn_login').on('click', function() { doLogin() });
     $('#btn_logout').on('click', function() { doLogout('Logget ut.', 'success') });
@@ -551,10 +550,17 @@ $(document).ready(function(){
                     if (!sjtoken) {
                         window.location.href = '/home';
                     }
-                    gmap = new google.maps.Map(sjmap, mapOptions);
-                    ginfowin = new google.maps.InfoWindow();
-                    getPerson();
-                    getAreas();
+                    if (location.protocol === 'https:' && navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function (p) {
+                            var LatLng = new google.maps.LatLng( p.coords.latitude, p.coords.longitude );
+                            mapOptions = { center: LatLng, zoom: 12 };
+                            loadMap();
+                        });
+                    }
+                    else {
+                        mapOptions = { center: { lat: 59.8, lng: 10.8 }, zoom: 12 }
+                        loadMap();
+                    }
                 }
             }
         });
