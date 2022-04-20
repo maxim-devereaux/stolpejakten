@@ -15,18 +15,18 @@ class Controller extends BaseController
 
     public function getToken( Request $request ) {
         $headers = [ 'Accept' => 'application/json' ];
-        return $this->makeRequest('POST', 'https://apiv9.stolpejakten.no/auth', [],  [], $request->all(), $headers, true );
+        return $this->makeRequest('POST', 'https://apiv10.stolpejakten.no/auth', [],  [], $request->all(), $headers, true );
     }
 
     public function getPerson( Request $request ) {
         $token = $request->get('token');
         $headers = [ 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json' ];
-        return $this->makeRequest('GET', 'https://apiv9.stolpejakten.no/users/me', [], [], [], $headers );
+        return $this->makeRequest('GET', 'https://apiv10.stolpejakten.no/users/me', [], [], [], $headers );
     }
 
     public function getAreas( Request $request ) {
         $headers = [ 'Accept' => 'application/json' ];
-        return $this->makeRequest('GET', 'https://apiv9.stolpejakten.no/fylker/app', [], [], [], $headers );
+        return $this->makeRequest('GET', 'https://apiv10.stolpejakten.no/fylker/app', [], [], [], $headers );
     }
 
     public function getVisits( Request $request ) {
@@ -36,7 +36,7 @@ class Controller extends BaseController
         $result = [];
 
         foreach($kommuner as $kommune) {
-            $kres = $this->makeRequest('GET', 'https://apiv9.stolpejakten.no/visits/kommune', [ 'kommune' => $kommune ], [], [], $headers );
+            $kres = $this->makeRequest('GET', 'https://apiv10.stolpejakten.no/visits/kommune', [ 'kommune' => $kommune ], [], [], $headers );
             if( $result === [] ) {
                 $result['STATUS'] = $kres['STATUS'];
                 $result['CONTENT'] = json_decode( $kres['CONTENT'], true );
