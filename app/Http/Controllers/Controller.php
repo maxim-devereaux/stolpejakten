@@ -14,25 +14,25 @@ class Controller extends BaseController
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests, ConsumesExternalServices;
 
     public function getToken( Request $request ) {
-        $headers = [ 'Accept' => 'application/json' ];
+        $headers = [ 'Accept' => 'application/json', 'X-Client-Id' => 'stolpejakten' ];
         return $this->makeRequest('POST', 'https://apiv10.stolpejakten.no/auth', [],  [], $request->all(), $headers, true );
     }
 
     public function getPerson( Request $request ) {
         $token = $request->get('token');
-        $headers = [ 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json' ];
+        $headers = [ 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json', 'X-Client-Id' => 'stolpejakten' ];
         return $this->makeRequest('GET', 'https://apiv10.stolpejakten.no/users/me', [], [], [], $headers );
     }
 
     public function getAreas( Request $request ) {
-        $headers = [ 'Accept' => 'application/json' ];
+        $headers = [ 'Accept' => 'application/json', 'X-Client-Id' => 'stolpejakten' ];
         return $this->makeRequest('GET', 'https://apiv10.stolpejakten.no/fylker/app', [], [], [], $headers );
     }
 
     public function getVisits( Request $request ) {
         $token = $request->get('token');
         $kommuner = explode( ',', $request->get('kommuner'));
-        $headers = [ 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json' ];
+        $headers = [ 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json', 'X-Client-Id' => 'stolpejakten' ];
         $result = [];
 
         foreach($kommuner as $kommune) {
